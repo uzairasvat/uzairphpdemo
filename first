@@ -1,0 +1,286 @@
+//dbclass.php
+<?php
+class dbclass{
+	public $cn;
+	function __construct(){
+		$dsn="mysql:host=localhost;dbname=test";
+		$this->cn=new PDO($dsn,"root","");
+	}	
+	function reg($uname,$pwd,$mobile,$email,$dob,$address){
+        $sql="insert into login(uname,pwd,mobile,email,dob,address) values(:un,:pwd,:mobile,:email,:dob,:address)";
+        $stmt=$this->cn->prepare($sql);
+        $stmt->bindParam(':un',$uname);
+        $stmt->bindParam(':pwd',$pwd);
+        $stmt->bindParam(':mobile',$mobile);
+        $stmt->bindParam(':email',$email);
+        $stmt->bindParam(':dob',$dob);
+        $stmt->bindParam(':address',$address);
+        $stmt->execute();
+        $row=$stmt->rowCount();
+		if($row==1){
+		 header("Location:index.php");
+		}
+		else{
+		 header("Location:reg.php");	
+		}		
+	}
+    function login($unm, $upass) {
+        $query = "select * from login where uname=:un and pwd=:up";
+        $stmt = $this->cn->prepare($query);
+        $stmt->bindParam(":un", $unm);
+        $stmt->bindParam(":up", $upass);
+        $stmt->execute();
+		$row=$stmt->rowCount();
+		return $row;	
+    }
+	function insertstudent($sname,$saddress,$smobile,$semail,$sdob,$sbranch){
+		$sql="insert into student (sname,saddress,smobile,semail,dob,sbranch) value(:sn,:saddress,:smobile,:semail,:sdob,:sbranch)";
+        $stmt=$this->cn->prepare($sql);
+        $stmt->bindParam(':sn',$sname);
+        $stmt->bindParam(':saddress',$saddress);
+        $stmt->bindParam(':smobile',$smobile);
+        $stmt->bindParam(':semail',$semail);
+        $stmt->bindParam(':sdob',$sdob);
+        $stmt->bindParam(':sbranch',$sbranch);
+        $stmt->execute();
+        $row=$stmt->rowCount();
+        if($row == 1){
+           header('Location:view.php');
+		}
+		else{
+		   header('Location:insert.php');
+		}
+		
+	}
+	
+	function viewstudent(){
+		$sql="select * from student";
+		$stmt=$this->cn->prepare($sql);
+		$stmt->execute();
+		echo '<table border=01>';
+		echo '<tr><th>Sname</th><th>Saddress</th><th>Smobile</th><th>Semail</th><th>Sdob</th><th>Sbranch</th><th>ACtion</th><th>ACtion</th></tr>';
+		while($row=$stmt->fetch()){
+		 echo '<tr>';
+		 echo "<td>$row[sname]</td>";
+		 echo "<td>$row[saddress]</td>";
+		 echo "<td>$row[smobile]</td>";
+		 echo "<td>$row[semail]</td>";
+		 echo "<td>$row[dob]</td>";
+		 echo "<td>$row[sbranch]</td>";
+		 echo "<td><a href=update.php?id=$row[id]>Update</a></td>";
+		 echo "<td><a href=delete.php?id=$row[id]>Delete</a></td>";
+		 echo '</tr>';
+		}
+		echo '</table>';
+	}
+	
+	function deletestudent($id){
+		$sql="delete from student where id=:id";
+		$stmt=$this->cn->prepare($sql);
+		$stmt->bindParam(':id',$id);
+		$stmt->execute();
+		$row=$stmt->rowCount();
+		if($row == 1){
+			header('Location:view.php');
+		}		
+	}
+	
+	function findbyid($id){
+		$sql="select * from student where id=:id";
+		$stmt=$this->cn->prepare($sql);
+		$stmt->bindParam(':id',$id);
+		$stmt->execute();
+		$r=$stmt->fetch();
+		$res=array('id'=>$r['id'],'sname'=>$r['sname'],'saddress'=>$r['saddress'],'smobile'=>$r['smobile'],'semail'=>$r['semail'],'dob'=>$r['dob'],'sbranch'=>$r['sbranch']);
+		return $res;
+	}
+	
+	function updatestudent($id,$sname,$saddress,$smobile,$semail,$sdob,$sbranch){
+		$sql="update Student set sname=:sname,saddress=:saddress,smobile=:smobile,semail=:semail,dob=:sdob,sbranch=:sbranch where id=:id";
+		$stmt=$this->cn->prepare($sql);
+		$stmt->bindParam(':id',$id);
+		$stmt->bindParam(':sname',$sname);
+        $stmt->bindParam(':saddress',$saddress);
+        $stmt->bindParam(':smobile',$smobile);
+        $stmt->bindParam(':semail',$semail);
+        $stmt->bindParam(':sdob',$sdob);
+        $stmt->bindParam(':sbranch',$sbranch);
+        $stmt->execute();
+		return 1;
+	}
+}
+?>
+
+
+//index.php
+<?php
+session_start();
+?>
+<body>
+<form method="GET">
+Enter The UserName:<input type="text" name="uname" title="PLZ Enter The UserName"required /><br/>
+Enter The Password:<input type="password" name="pwd" title="PLZ Enter The Password" required /><br/>
+<input type="submit" name="submit" value="Login" /><br/>
+</form>
+<a href="reg.php">Create User</a>
+</body>
+<?php
+if(isset($_GET['submit']))
+{
+	if($_GET['uname']=="admin" && $_GET['pwd']=="admin")
+	{
+		header("Location:oddeven.php");
+	}
+	else{
+        include "dbclass.php";
+        $obj=new dbclass();
+        $r=$obj->login($_GET['uname'],$_GET['pwd']);	
+        if($r == 1)
+		{
+	       $_SESSION['user'] = $_GET['uname'];
+		   header("Location:home.php");
+		}
+		else
+		{
+		   header("Location:index.php");	
+		}
+	}
+}	
+?>
+
+
+//reg.php
+<body>
+<form>
+Enter The Username:<input type="text" name="uname" /><br/>
+Enter The Password:<input type="password" name="pwd" /><br/>
+Enter The Mobile:<input type="mobile" name="mobile" /><br/>
+Enter The Email:<input type="email" name="email" /><br/>
+Select DOB:<input type="date" name="dob" /><br/>
+Enter The Address:<input type="textarea" name="address" /><br/>
+<input type="submit" name="submit" value="Submit" />
+<input type="reset" />
+</form>
+</body>
+<?php
+if(isset($_GET['submit'])){
+include "dbclass.php";
+$obj=new dbclass();
+$obj->reg($_GET['uname'],$_GET['pwd'],$_GET['mobile'],$_GET['email'],$_GET['dob'],$_GET['address']);	
+}
+?>
+
+//home.php
+<?php session_start(); 
+      $s=$_SESSION['user']; 
+?><h3>Welcome!<?php echo $s;?></h3>
+<h3><a href="insert.php">Add</a></h3>
+<h3><a href="view.php">View</a></h3>
+
+//insert.php
+<?php
+session_start();
+echo "<h3>Welcome".$_SESSION['user']."</h3>";
+?>
+<body>
+<form>
+Enter The Name:<input type="text" name="sname" required/><br />
+Enter The Address:<input type="textarea" name="address" required/><br />
+Enter The Mobile:<input type="text" name="mobile"/><br required/>
+Enter The Email:<input type="email" name="email"/><br required/>
+Enter The Dob:<input type="date" name="dob" required/><br />
+Enter The Branch:<select name="branch" required>
+                 <option value="BCA">BCA</option>
+				 <option value="MCA">MCA</option>
+                 </select><br />
+<input type="submit" value="submit" name="submit" />
+</form>
+</body>
+<?php
+if(isset($_GET['submit'])){
+	include "dbclass.php";
+	$obj=new dbclass();
+	$obj->insertstudent($_GET['sname'],$_GET['address'],$_GET['mobile'],$_GET['email'],$_GET['dob'],$_GET['branch']);
+}
+?>
+
+
+//view.php
+<?php
+session_start();
+echo "<h3>Welcome".$_SESSION['user']."</h3>";
+include "dbclass.php";
+$obj=new dbclass();
+$obj->viewstudent();
+?>
+
+//update.php
+<?php
+session_start();
+echo "<h3>Welcome".$_SESSION['user']."</h3>"; 
+include "dbclass.php";
+$obj=new dbclass();
+$uid=$_GET['id'];
+$r=$obj->findbyid($uid);
+?>
+<body>
+<form>
+<input type="hidden" name="sid" value="<?php echo $r['id'];?>">
+Enter The Name:<input type="text" name="sname" value="<?php echo $r['sname']; ?>"/><br />
+Enter The Address:<input type="textarea" name="address" value="<?php echo $r['saddress'];?>"/><br />
+Enter The Mobile:<input type="text" name="mobile" value="<?php echo $r['smobile'];?>"/><br />
+Enter The Email:<input type="email" name="email" value="<?php echo $r['semail'];?>"/><br />
+Enter The Dob:<input type="date" name="dob" value="<?php echo $r['dob'];?>"/><br />
+Enter The Branch:<select name="branch" <?php echo $r['sbranch']?>>
+                 <option value="BCA">BCA</option>
+				 <option value="MCA">MCA</option>
+                 </select><br />
+<input type="submit" value="submit" name="submit" />
+</form>
+</body>
+<?php 
+if(isset($_GET['submit'])){
+	$r=$obj->updatestudent($_GET['sid'],$_GET['sname'],$_GET['address'],$_GET['mobile'],$_GET['email'],$_GET['dob'],$_GET['branch']);
+	if($r==1){
+		header('Location:view.php');
+	}
+	else{
+		header('Location:update.php');
+	}
+	
+}
+?>
+
+//uploadform.php
+<html>
+<body>
+<form action="upload.php" method="post" enctype="multipart/form-data">
+    Select image to upload:
+    <input type="file" name="image" id="image">
+    <input type="submit" value="Upload Image" name="submit">
+</form>
+</body>
+</html>
+
+//upload.php
+<?php
+
+   if(isset($_FILES['image'])){
+      $errors= array();
+      $file_name = $_FILES['image']['name'];
+      $file_size = $_FILES['image']['size'];
+      $file_tmp = $_FILES['image']['tmp_name'];
+      $file_type = $_FILES['image']['type'];
+     
+      if($file_size > 2097152) {
+         $errors[]='File size must be excately 2 MB';
+      }
+      
+      if(empty($errors)==true) {
+         move_uploaded_file($file_tmp,"images/".$file_name);
+         echo "Success";
+      }else{
+         print_r($errors);
+      }
+   }
+?>
