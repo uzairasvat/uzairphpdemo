@@ -1,0 +1,163 @@
+//index.php
+<?php
+    @include 'dbClass.php';
+    $c = new dbClass();
+?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+    <center>
+        <?php
+            if(isset($_GET['uid'])) { $r = $c->fetchAll($_GET['uid']); ?>
+                <h1>Update form</h1>
+                <form action="" method="post">
+                Sname : <input type="text" name="sname" value="<?=$r[1]?>" id=""/><br><br>
+                mark 1 : <input type="text" name="m1" value="<?=$r[2]?>" id=""/><br><br>
+                mark 2 : <input type="text" name="m2" value="<?=$r[3]?>" id=""/><br><br>
+                mark 3 : <input type="text" name="m3" value="<?=$r[4]?>" id=""/><br><br>
+                mark 4 : <input type="text" name="m4" value="<?=$r[5]?>" id=""/><br><br>
+                DOB : <input type="date" name="dob" id="" value="<?=$r[6]?>"/><br><br>
+                gender : <input type="radio" name="g" value="m" <?php echo($r[7]=="m"?"checked":"") ?> id=""/> Male
+                            <input type="radio" name="g" value="f" <?php echo($r[7]=="f"?"checked":"") ?> id=""/> Female<br><br>
+                    hobby : <input type="checkbox" name="h[]" value="cricket" <?php echo($c->cBox($r[8],"cricket")) ?> id=""> Cricket
+                    <input type="checkbox" name="h[]" value="Football" <?php echo($c->cBox($r[8],"Football")) ?> id=""> Football
+                    <input type="checkbox" name="h[]" value="Vollyboll" <?php echo($c->cBox($r[8],"Vollyboll")) ?> id=""> Vollyboll
+                    <input type="checkbox" name="h[]" value="painting" <?php echo($c->cBox($r[8],"painting")) ?> id=""> painting<br><br>
+                    <input type="submit" value="Update" name="Update">
+                </form>
+                <a href="index.php">Insert Data</a>
+            <?php }else{ ?>
+                <h1>Insert form</h1>
+                <form action="" method="post">
+                Sname : <input type="text" name="sname" id=""/><br><br>
+                mark 1 : <input type="text" name="m1" id=""/><br><br>
+                mark 2 : <input type="text" name="m2" id=""/><br><br>
+                mark 3 : <input type="text" name="m3" id=""/><br><br>
+                mark 4 : <input type="text" name="m4" id=""/><br><br>
+                DOB : <input type="date" name="dob" id=""/><br><br>
+                gender : <input type="radio" name="g" value="m" checked id=""/> Male
+                            <input type="radio" name="g" value="f" id=""/> Female<br><br>
+                    hobby : <input type="checkbox" name="h[]" value="cricket" id=""> Cricket
+                    <input type="checkbox" name="h[]" value="Football" id=""> Football
+                    <input type="checkbox" name="h[]" value="Vollyboll" id=""> Vollyboll
+                    <input type="checkbox" name="h[]" value="painting" id=""> painting<br><br>
+                    <input type="submit" value="insert" name="submit">
+                </form>
+            <?php }?>
+<?php
+    if(isset($_POST['submit'])) {
+        $hb = implode($_POST['h'],',');
+        $c->insert($_POST['sname'],$_POST['m1'],$_POST['m2'],$_POST['m3'],$_POST['m4'],$_POST['dob'],$_POST['g'],$hb);
+    }
+
+    if(isset($_POST['Update'])) {
+        $hb = implode($_POST['h'],',');
+        $c->update($_GET['uid'],$_POST['sname'],$_POST['m1'],$_POST['m2'],$_POST['m3'],$_POST['m4'],$_POST['dob'],$_POST['g'],$hb);
+    }
+?>
+<h1>All Records</h1>
+<table border="1">
+    <thead>
+        <tr>
+            <th>Sname</th>
+            <th>Mark 1</th>
+            <th>Mark 2</th>
+            <th>Mark 3</th>
+            <th>Mark 4</th>
+            <th>Total</th>
+            <th>Percentag</th>
+            <th>Gender</th>
+            <th>DOB</th>
+            <th>Hobby</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        <?php $c->displayAll() ?>
+    </tbody>
+</table>
+
+</center>
+</body>
+</html>
+
+
+//dbclass.php
+<?php
+    class dbClass{
+
+        public $con;
+
+        function __construct() {
+            $sdn = 'mysql:host=localhost;dbname=test';
+            $this->con = new PDO($sdn,"root","");
+        }
+
+        function insert($sn,$m1,$m2,$m3,$m4,$dob,$g,$h) {
+            $q = "INSERT INTO student (sname,m1,m2,m3,m4,dob,gender,h) VALUES (:sn,:m1,:m2,:m3,:m4,:dob,:g,:h)";
+            $stm = $this->con->prepare($q);
+            $stm->bindParam(':sn',$sn);
+            $stm->bindParam(':m1',$m1);
+            $stm->bindParam(':m2',$m2);
+            $stm->bindParam(':m3',$m3);
+            $stm->bindParam(':m4',$m4);
+            $stm->bindParam(':dob',$dob);
+            $stm->bindParam(':g',$g);
+            $stm->bindParam(':h',$h);
+            $stm->execute();
+            echo "<div class=succ>data inserted</div>";
+        }
+
+        function displayAll() {
+            $q = "select * from student";
+            $stm = $this->con->prepare($q);
+            $stm->execute();
+
+            while($r = $stm->fetch()) {
+                $t = $r['m1']+$r['m2']+$r['m3']+$r['m4'];
+                $p = $t/4;
+                echo "<tr><td>".$r['sname']."</td><td>".$r['m1']."</td><td>".$r['m2']."</td><td>".$r['m3']."</td><td>".$r['m4']."</td><td>".$t."</td><td>".$p."</td><td>".$r['gender']."</td><td>".$r['dob']."</td><td>".$r['h']."</td><td><a href=index.php?uid=".$r['sid'].">Update</a></td></tr>";
+            }
+        }
+
+        function fetchAll($id) {
+            $q = "select * from student where sid=:id";
+            $stm = $this->con->prepare($q);
+            $stm->bindParam(':id',$id);
+            $stm->execute();
+            $r = $stm->fetch();
+            return $r;
+        }
+
+        function cBox($ar,$val) {
+            $arr = explode(',',$ar);
+            foreach($arr as $e) {
+                if($e==$val){
+                    return "checked";
+                }
+            }
+        }
+
+        function update($id,$sn,$m1,$m2,$m3,$m4,$dob,$g,$h) {
+            $q = "UPDATE student SET sname=:sn,m1=:m1,m2=:m2,m3=:m3,m4=:m4,dob=:dob,gender=:g,h=:h WHERE sid=:uid";
+            $stm = $this->con->prepare($q);
+            $stm->bindParam(':sn',$sn);
+            $stm->bindParam(':m1',$m1);
+            $stm->bindParam(':m2',$m2);
+            $stm->bindParam(':m3',$m3);
+            $stm->bindParam(':m4',$m4);
+            $stm->bindParam(':dob',$dob);
+            $stm->bindParam(':g',$g);
+            $stm->bindParam(':h',$h);
+            $stm->bindParam(':uid',$id);
+            $stm->execute();
+            echo "<div class=succ>data Updated</div>";
+        }
+    }
+?>
